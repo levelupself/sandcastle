@@ -55,6 +55,30 @@ describe("resolveGitMounts", () => {
     ]);
   });
 
+  it("resolves a relative gitdir from the .git file directory", async () => {
+    const workspaceDir = await makeTempDir();
+    const parentGitDir = join(
+      workspaceDir,
+      ".git",
+      "modules",
+      "projects",
+      "example",
+    );
+    await mkdir(parentGitDir, { recursive: true });
+
+    const repoDir = join(workspaceDir, "projects", "example");
+    await mkdir(repoDir, { recursive: true });
+    const gitFile = join(repoDir, ".git");
+    await writeFile(gitFile, "gitdir: ../../.git/modules/projects/example\n");
+
+    const mounts = await run(gitFile);
+
+    expect(mounts).toEqual([
+      { hostPath: gitFile, sandboxPath: gitFile },
+      { hostPath: parentGitDir, sandboxPath: parentGitDir },
+    ]);
+  });
+
   it("falls back to single mount when .git file has unexpected content", async () => {
     const dir = await makeTempDir();
     const gitFile = join(dir, ".git");

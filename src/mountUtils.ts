@@ -284,6 +284,10 @@ export const patchGitMountsForWindows = async (
         sandboxPath: `${sandboxRepoDir}/.git`,
       });
       replacedGitFile = true;
+    } else if (normalizedHostPath.endsWith("/.git")) {
+      // A created worktree does not need the host repo's .git pointer file.
+      // Keeping it produces an invalid Windows-path destination for submodules.
+      continue;
     } else {
       correctedMounts.push(m);
     }

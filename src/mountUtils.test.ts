@@ -468,6 +468,37 @@ describe("patchGitMountsForWindows", () => {
       });
     });
 
+    it("drops the host submodule .git pointer for a created worktree", async () => {
+      const mounts = [
+        {
+          hostPath: "C:/Users/workspace/projects/example/.git",
+          sandboxPath: "C:/Users/workspace/projects/example/.git",
+        },
+        {
+          hostPath: "C:/Users/workspace/.git/modules/projects/example",
+          sandboxPath: "C:/Users/workspace/.git/modules/projects/example",
+        },
+      ];
+      const result = await patchGitMountsForWindows(
+        mounts,
+        "C:/Users/workspace/projects/example/.sandcastle/worktrees/agent-run",
+        SANDBOX_REPO_DIR,
+        makeReadFile(
+          "gitdir: C:/Users/workspace/.git/modules/projects/example/worktrees/agent-run\n",
+        ),
+        makeStatFile("file"),
+        "win32",
+      );
+
+      expect(result).toHaveLength(2);
+      expect(result).not.toContainEqual(mounts[0]);
+      expect(result[0]).toEqual({
+        hostPath: "C:/Users/workspace/.git/modules/projects/example",
+        sandboxPath: PARENT_GIT_SANDBOX_DIR,
+      });
+      expect(result[1]!.sandboxPath).toBe(`${SANDBOX_REPO_DIR}/.git`);
+    });
+
     it("corrected .git file contains POSIX gitdir path", async () => {
       const mounts = [
         {

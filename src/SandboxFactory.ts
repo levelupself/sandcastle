@@ -1,6 +1,6 @@
 import { Context, Effect, Exit, Layer } from "effect";
 import { FileSystem } from "@effect/platform";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import type { PlatformError } from "@effect/platform/Error";
 import {
   AgentError,
@@ -286,9 +286,12 @@ export const resolveGitMounts = (
       return [{ hostPath: gitPath, sandboxPath: gitPath }];
     }
     const gitdirPath = match[1]!;
-    // gitdirPath is like /path/to/repo/.git/worktrees/<name>
-    // Mount both the .git file and the parent .git directory
-    const parentGitDir = resolve(gitdirPath, "..", "..");
+    // Worktree pointers end in .git/worktrees/<name>; submodule pointers
+    // point directly at .git/modules/<path>.
+    const resolvedGitdirPath = resolve(dirname(gitPath), gitdirPath);
+    const parentGitDir = /[\\/]worktrees[\\/][^\\/]+$/.test(resolvedGitdirPath)
+      ? resolve(resolvedGitdirPath, "..", "..")
+      : resolvedGitdirPath;
     return [
       { hostPath: gitPath, sandboxPath: gitPath },
       { hostPath: parentGitDir, sandboxPath: parentGitDir },
